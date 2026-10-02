@@ -1,0 +1,589 @@
+
+######## IDENTITAS ########
+Amlogic Meson GXL (S905X) P212 Development Board
+Linux aml-s9xx-box 6.12.35-current-meson64 #1 SMP PREEMPT Fri Jun 27 10:11:46 UTC 2025 aarch64 aarch64 aarch64 GNU/Linux
+root=LABEL=ROOT_EMMC rootflags=data=writeback console=ttyAML0,115200n8 console=tty0 rw no_console_suspend consoleblank=0 fsck.fix=yes fsck.repair=yes net.ifnames=0 splash plymouth.ignore-serial-consoles
+               total        used        free      shared  buff/cache   available
+Mem:           1.9Gi       439Mi       213Mi        35Mi       1.4Gi       1.4Gi
+Swap:             0B          0B          0B
+cat: '/sys/class/thermal/thermal_zone*/temp': No such file or directory
+100000 250000 500000 667000 1000000 1200000 1512000 
+
+######## SDIO / CHIP WIFI (vendor 0x02d0=Broadcom, 0x024c=Realtek) ########
+/sys/bus/sdio/devices/mmc2:0001:1
+  vendor: 0x024c
+  device: 0xf179
+  class: 0x07
+  modalias: sdio:c07v024CdF179
+  driver: (belum ada driver)
+mmc0  mmc1  mmc2
+
+######## JARINGAN ########
+lo               UNKNOWN        00:00:00:00:00:00 <LOOPBACK,UP,LOWER_UP> 
+eth0             UP             ae:07:7a:b6:60:3e <BROADCAST,MULTICAST,UP,LOWER_UP> 
+eth1             DOWN           ae:07:7a:b6:60:3e <NO-CARRIER,BROADCAST,MULTICAST,UP> 
+lo               UNKNOWN        127.0.0.1/8 ::1/128 
+eth0             UP             10.42.0.177/24 fe80::ac07:7aff:feb6:603e/64 
+eth1             DOWN           
+default via 10.42.0.1 dev eth0 proto dhcp src 10.42.0.177 metric 100 
+10.42.0.0/24 dev eth0 proto kernel scope link src 10.42.0.177 metric 100 
+rfkill: cannot open /dev/rfkill: No such file or directory
+
+######## MODUL & USB ########
+Module                  Size  Used by
+meson_gxl              16384  1
+smsc                   20480  1 meson_gxl
+dwmac_generic          12288  0
+mdio_mux_meson_gxl     12288  0
+meson_rng              12288  0
+rtc_meson_vrtc         16384  1
+dwmac_meson8b          12288  0
+simpledrm              16384  0
+nvmem_meson_efuse      12288  0
+drm_shmem_helper       16384  1 simpledrm
+sr9700                 16384  0
+dm9601                 16384  0
+usbnet                 40960  2 sr9700,dm9601
+Bus 001 Device 001: ID 1d6b:0002 Linux Foundation 2.0 root hub
+Bus 001 Device 002: ID 0fe6:9700 ICS Advent DM9601 Fast Ethernet Adapter
+
+######## DMESG TERKAIT WIFI / SDIO / PWM / FIRMWARE ########
+[    0.000000] psci: PSCIv0.2 detected in firmware.
+[    0.000000] percpu: Embedded 25 pages/cpu s62104 r8192 d32104 u102400
+[    0.000000] pcpu-alloc: s62104 r8192 d32104 u102400 alloc=25*4096
+[    2.191012] meson-gx-mmc d0074000.mmc: allocated mmc-pwrseq
+[    2.383147] meson-pwm c11086c0.pwm: using obsolete compatible, please consider updating dt
+[    4.233282] scpi_protocol scpi: SCP Protocol legacy pre-1.0 firmware
+[    4.242830] meson-gx-mmc d0070000.mmc: allocated mmc-pwrseq
+[    4.299418] mmc2: new high speed SDIO card at address 0001
+
+######## CLOCK 32 kHz WIFI (PWM) ########
+ wifi32k                             1       1        0        32768       0          0     50000      Y   sdio-pwrseq                     ext_clock                
+    c11086c0.pwm#mux1                0       0        0        24000000    0          0     50000      Y      deviceless                      no_connection_id         
+       c11086c0.pwm#div1             0       0        0        24000000    0          0     50000      Y         deviceless                      no_connection_id         
+          c11086c0.pwm#gate1         0       0        0        24000000    0          0     50000      N            c11086c0.pwm                    no_connection_id         
+                c11086c0.pwm#mux0    1       1        0        666666666   0          0     50000      Y                  deviceless                      no_connection_id         
+                   c11086c0.pwm#div0 1       1        0        666666666   0          0     50000      Y                     deviceless                      no_connection_id         
+                      c11086c0.pwm#gate0 1       1        0        666666666   0          0     50000      Y                        c11086c0.pwm                    no_connection_id         
+
+######## DEVICE TREE: node WiFi / SDIO / PWRSEQ ########
+7-	interrupt-parent = <0x01>;
+8-	compatible = "amlogic,p212\0amlogic,s905x\0amlogic,meson-gxl";
+9-
+10:	wifi32k {
+11-		#clock-cells = <0x00>;
+12-		clock-frequency = <0x8000>;
+13-		compatible = "pwm-clock";
+14-		phandle = <0x16>;
+15-		pwms = <0x3a 0x00 0x7736 0x00>;
+16-	};
+17-
+18-	regulator-vddao-3v3 {
+19-		regulator-max-microvolt = <0x325aa0>;
+20-		regulator-min-microvolt = <0x325aa0>;
+21-		regulator-name = "VDDAO_3V3";
+22-		compatible = "regulator-fixed";
+--
+260-				pinctrl-1 = <0x25>;
+261-				status = "okay";
+262-				disable-wp;
+263:				mmc-pwrseq = <0x26>;
+264-				reg = <0x00 0x70000 0x00 0x800>;
+265-				phandle = <0x9d>;
+266-				sd-uhs-sdr104;
+267-				max-frequency = <0x5f5e100>;
+268-				sd-uhs-sdr50;
+269-				sd-uhs-sdr12;
+270-
+271-				wifi@1 {
+272:					compatible = "brcm,bcm4329-fmac";
+273-					reg = <0x01>;
+274-					phandle = <0x9e>;
+275-				};
+276-			};
+277-
+278-			phy@78020 {
+279-				clock-names = "phy";
+280-				resets = <0x11 0x22>;
+281-				clocks = <0x03 0x37>;
+282-				#phy-cells = <0x00>;
+283-				compatible = "amlogic,meson-gxl-usb2-phy";
+284-				status = "okay";
+--
+351-				pinctrl-1 = <0x2d>;
+352-				status = "okay";
+353-				disable-wp;
+354:				mmc-pwrseq = <0x2e>;
+355-				reg = <0x00 0x74000 0x00 0x800>;
+356-				phandle = <0xa0>;
+357-				max-frequency = <0xbebc200>;
+358-				cap-mmc-highspeed;
+359-			};
+360-		};
+361-
+362-		bus@c8100000 {
+363-			#address-cells = <0x02>;
+364-			#size-cells = <0x02>;
+365-			compatible = "simple-bus";
+366-			ranges = <0x00 0x00 0x00 0xc8100000 0x00 0x100000>;
+--
+712-					clocks = <0x16>;
+713-					shutdown-gpios = <0x15 0x60 0x00>;
+714-					max-speed = <0x1e8480>;
+715:					compatible = "brcm,bcm43438-bt";
+716-				};
+717-			};
+718-
+719-			adc@8680 {
+720-				vref-supply = <0x17>;
+721-				clock-names = "clkin\0core\0adc_clk\0adc_sel";
+722-				interrupts = <0x00 0x49 0x01>;
+723-				clocks = <0x12 0x03 0x17 0x03 0x61 0x03 0x62>;
+724-				#io-channel-cells = <0x01>;
+725-				compatible = "amlogic,meson-gxl-saradc\0amlogic,meson-saradc";
+726-				status = "okay";
+727-				reg = <0x00 0x8680 0x00 0x34>;
+--
+1085-					};
+1086-				};
+1087-
+1088:				sdio_irq {
+1089-					phandle = <0x7b>;
+1090-
+1091-					mux {
+1092:						function = "sdio";
+1093-						bias-disable;
+1094:						groups = "sdio_irq";
+1095-					};
+1096-				};
+1097-
+1098-				hdmi_i2c {
+1099-					phandle = <0x35>;
+1100-
+1101-					mux {
+1102-						function = "hdmi_i2c";
+1103-						bias-disable;
+1104-						groups = "hdmi_sda\0hdmi_scl";
+1105-					};
+1106-				};
+--
+1259-					};
+1260-				};
+1261-
+1262:				sdio {
+1263-					phandle = <0x24>;
+1264-
+1265-					mux-0 {
+1266:						function = "sdio";
+1267-						bias-pull-up;
+1268:						groups = "sdio_d0\0sdio_d1\0sdio_d2\0sdio_d3\0sdio_cmd";
+1269-					};
+1270-
+1271-					mux-1 {
+1272:						function = "sdio";
+1273-						bias-disable;
+1274:						groups = "sdio_clk";
+1275-					};
+1276-				};
+1277-
+1278-				sdcard {
+1279-					phandle = <0x29>;
+1280-
+1281-					mux-0 {
+1282-						function = "sdcard";
+1283-						bias-pull-up;
+1284-						groups = "sdcard_d0\0sdcard_d1\0sdcard_d2\0sdcard_d3\0sdcard_cmd";
+1285-					};
+1286-
+--
+1360-					};
+1361-				};
+1362-
+1363:				sdio_clk_gate {
+1364-					phandle = <0x25>;
+1365-
+1366-					mux {
+1367-						function = "gpio_periphs";
+1368-						bias-pull-down;
+1369-						groups = "GPIOX_4";
+1370-					};
+1371-				};
+1372-
+1373-				sdcard_clk_gate {
+1374-					phandle = <0x2a>;
+1375-
+--
+1609-		compatible = "arm,armv8-timer";
+1610-	};
+1611-
+1612:	sdio-pwrseq {
+
+######## FIRMWARE WIFI ########
+aic8800
+ap6210
+ap6212
+ap6275p
+arm
+ath10k
+ath11k
+ath12k
+BCM4345C0.hcd
+BCM4345C5.hcd
+brcm
+bt_configure_pskey.ini
+bt_configure_rf.ini
+cirrus
+cnm
+cypress
+dvb-demod-mn88472-02.fw
+dvb-demod-mn88473-01.fw
+dvb-demod-si2168-d60-01.fw
+dvb-fe-xc4000-1.4.1.fw
+dvb-fe-xc4000-1.4.fw
+dvb-fe-xc5000-1.6.114.fw
+dvb-fe-xc5000c-4.1.30.7.fw
+dvb-tuner-si2141-a10-01.fw
+dvb-usb-tbs5520.fw
+eagle_fw_ate_config_v19.bin
+eagle_fw_first_init_v19.bin
+eagle_fw_second_init_v19.bin
+edid
+fw_bcm43455c0_ag_apsta.bin
+fw_bcm43455c0_ag.bin
+fw_bcm43455c0_ag_p2p.bin
+fw_bcm43456c5_ag_apsta.bin
+fw_bcm43456c5_ag.bin
+fw_bcm43456c5_ag_p2p.bin
+fw_bcm4359c0_ag.bin
+hinlink-h88k-240x135-lcd.bin
+imx
+intel
+iwlwifi-3160-17.ucode
+iwlwifi-3168-29.ucode
+iwlwifi-7260-17.ucode
+iwlwifi-7265-17.ucode
+iwlwifi-7265D-29.ucode
+iwlwifi-8000C-36.ucode
+iwlwifi-8265-36.ucode
+iwlwifi-9260-th-b0-jf-b0-46.ucode
+iwlwifi-cc-a0-59.ucode
+iwlwifi-ty-a0-gf-a0-59.ucode
+iwlwifi-ty-a0-gf-a0-72.ucode
+iwlwifi-ty-a0-gf-a0-89.ucode
+iwlwifi-ty-a0-gf-a0.pnvm
+mediatek
+meson
+mt7601.bin
+mt7601u.bin
+mt7610u.bin
+mt7662.bin
+mt7662_rom_patch.bin
+nanosic
+/lib/firmware/brcm:
+
+/lib/firmware/rtlwifi:
+rtl8188efw.bin
+rtl8188eufw.bin
+rtl8192cfw.bin
+rtl8192cfwU_B.bin
+rtl8192cfwU.bin
+rtl8192cufw_A.bin
+rtl8192cufw_B.bin
+rtl8192cufw.bin
+rtl8192cufw_TMSC.bin
+rtl8192defw.bin
+rtl8192eefw.bin
+rtl8192eu_ap_wowlan.bin
+rtl8192eu_nic.bin
+rtl8192eu_wowlan.bin
+rtl8192sefw.bin
+rtl8710bufw_SMIC.bin
+rtl8712u.bin
+rtl8723aufw_A.bin
+rtl8723aufw_B.bin
+rtl8723aufw_B_NoBT.bin
+rtl8723befw.bin
+rtl8723bs_ap_wowlan.bin
+rtl8723bs_nic.bin
+rtl8723bs_wowlan.bin
+rtl8723bu_ap_wowlan.bin
+rtl8723bu_nic.bin
+rtl8723bu_wowlan.bin
+rtl8723fw_B.bin
+rtl8723fw.bin
+rtl8821aefw.bin
+rtl8821aefw_wowlan.bin
+
+/lib/firmware/rtw88:
+README
+rtw8703b_fw.bin
+rtw8703b_wow_fw.bin
+rtw8723d_fw.bin
+rtw8812a_fw.bin
+rtw8814a_fw.bin
+rtw8821a_fw.bin
+rtw8821c_fw.bin
+rtw8822b_fw.bin
+rtw8822c_fw.bin
+rtw8822c_wow_fw.bin
+
+######## KONFIG KERNEL ARMBIAN (opsi WiFi / PWM) ########
+CONFIG_CFG80211=m
+CONFIG_CFG80211_REQUIRE_SIGNED_REGDB=y
+CONFIG_CFG80211_USE_KERNEL_REGDB_KEYS=y
+CONFIG_CFG80211_CRDA_SUPPORT=y
+CONFIG_CFG80211_WEXT=y
+CONFIG_CFG80211_KUNIT_TEST=m
+CONFIG_MAC80211=m
+CONFIG_MAC80211_HAS_RC=y
+CONFIG_MAC80211_RC_MINSTREL=y
+CONFIG_MAC80211_RC_DEFAULT_MINSTREL=y
+CONFIG_MAC80211_RC_DEFAULT="minstrel_ht"
+CONFIG_MAC80211_KUNIT_TEST=m
+CONFIG_MAC80211_MESH=y
+CONFIG_MAC80211_LEDS=y
+CONFIG_MAC80211_STA_HASH_MAX_SIZE=0
+CONFIG_R8169=m
+CONFIG_R8169_LEDS=y
+CONFIG_WLAN=y
+CONFIG_WLAN_VENDOR_ATH=y
+CONFIG_WLAN_VENDOR_ATMEL=y
+CONFIG_WLAN_VENDOR_BROADCOM=y
+CONFIG_BRCMUTIL=m
+CONFIG_BRCMSMAC=m
+CONFIG_BRCMSMAC_LEDS=y
+CONFIG_BRCMFMAC=m
+CONFIG_BRCMFMAC_PROTO_BCDC=y
+CONFIG_BRCMFMAC_PROTO_MSGBUF=y
+CONFIG_BRCMFMAC_SDIO=y
+CONFIG_BRCMFMAC_USB=y
+CONFIG_BRCMFMAC_PCIE=y
+CONFIG_BRCMDBG=y
+CONFIG_WLAN_VENDOR_INTEL=y
+CONFIG_WLAN_VENDOR_INTERSIL=y
+CONFIG_WLAN_VENDOR_MARVELL=y
+CONFIG_WLAN_VENDOR_MEDIATEK=y
+CONFIG_WLAN_VENDOR_MICROCHIP=y
+CONFIG_WLAN_VENDOR_PURELIFI=y
+CONFIG_WLAN_VENDOR_RALINK=y
+CONFIG_WLAN_VENDOR_REALTEK=y
+CONFIG_RTL8180=m
+CONFIG_RTL8187=m
+CONFIG_RTL8187_LEDS=y
+CONFIG_RTL_CARDS=m
+CONFIG_RTL8192CE=m
+CONFIG_RTL8192SE=m
+CONFIG_RTL8192DE=m
+CONFIG_RTL8723AE=m
+CONFIG_RTL8723BE=m
+CONFIG_RTL8188EE=m
+CONFIG_RTL8192EE=m
+CONFIG_RTL8821AE=m
+CONFIG_RTL8192CU=m
+CONFIG_RTLWIFI=m
+CONFIG_RTLWIFI_PCI=m
+CONFIG_RTLWIFI_USB=m
+CONFIG_RTL8192C_COMMON=m
+CONFIG_RTL8192D_COMMON=m
+CONFIG_RTL8723_COMMON=m
+CONFIG_RTLBTCOEXIST=m
+CONFIG_RTL8XXXU=m
+CONFIG_RTW88=m
+CONFIG_RTW88_CORE=m
+CONFIG_RTW88_PCI=m
+CONFIG_RTW88_SDIO=m
+CONFIG_RTW88_8822C=m
+CONFIG_RTW88_8821C=m
+CONFIG_RTW88_8822CS=m
+CONFIG_RTW88_8821CE=m
+CONFIG_RTW88_8821CS=m
+CONFIG_WLAN_VENDOR_RSI=y
+CONFIG_WLAN_VENDOR_SILABS=y
+CONFIG_WLAN_VENDOR_ST=y
+CONFIG_WLAN_VENDOR_TI=y
+CONFIG_RTL8822CS=m
+CONFIG_RTL8822BU=m
+CONFIG_RTL8821CU=m
+CONFIG_RTL8192EU=m
+CONFIG_RTL8189FS=m
+CONFIG_RTL8189ES=m
+CONFIG_WLAN_VENDOR_ZYDAS=y
+CONFIG_WLAN_VENDOR_QUANTENNA=y
+CONFIG_MAC80211_HWSIM=m
+CONFIG_PWRSEQ_EMMC=y
+CONFIG_PWRSEQ_SD8787=m
+CONFIG_PWRSEQ_SIMPLE=y
+CONFIG_RTLLIB=m
+CONFIG_RTLLIB_CRYPTO_CCMP=m
+CONFIG_RTLLIB_CRYPTO_TKIP=m
+CONFIG_RTLLIB_CRYPTO_WEP=m
+CONFIG_RTL8192E=m
+CONFIG_RTL8723BS=m
+CONFIG_R8712U=m
+CONFIG_COMMON_CLK_PWM=y
+CONFIG_PWM=y
+CONFIG_PWM_ATMEL_TCB=m
+CONFIG_PWM_CLK=m
+CONFIG_PWM_DWC_CORE=m
+CONFIG_PWM_DWC=m
+CONFIG_PWM_IQS620A=m
+CONFIG_PWM_LP3943=m
+CONFIG_PWM_MESON=y
+CONFIG_PWM_NTXEC=m
+CONFIG_PWM_TWL=m
+CONFIG_PWM_TWL_LED=m
+CONFIG_PWM_XILINX=m
+
+######## STORAGE ########
+NAME FSTYPE FSVER LABEL     UUID                                 FSAVAIL FSUSE% MOUNTPOINTS
+mmcblk1
+                                                                                
+├─mmcblk1p1
+│    vfat   FAT16 BOOT_EMMC 2AC8-56B0                                           
+└─mmcblk1p2
+     ext4   1.0   ROOT_EMMC 8c54c838-3d09-497d-92ab-2da735c2b332   58.2M    99% /var/log.hdd
+                                                                                /
+mmcblk1boot0
+                                                                                
+mmcblk1boot1
+                                                                                
+Disk /dev/mmcblk1: 7.28 GiB, 7818182656 bytes, 15269888 sectors
+Units: sectors of 1 * 512 = 512 bytes
+Sector size (logical/physical): 512 bytes / 512 bytes
+I/O size (minimum/optimal): 512 bytes / 512 bytes
+Disklabel type: dos
+Disk identifier: 0xf6a20000
+
+Device         Boot   Start      End  Sectors  Size Id Type
+/dev/mmcblk1p1      1953792  2953215   999424  488M  c W95 FAT32 (LBA)
+/dev/mmcblk1p2      2955264 15269887 12314624  5.9G 83 Linux
+Filesystem      Size  Used Avail Use% Mounted on
+tmpfs           193M   22M  171M  12% /run
+/dev/mmcblk1p2  5.7G  5.7G   59M  99% /
+tmpfs           961M   32K  961M   1% /dev/shm
+tmpfs           5.0M     0  5.0M   0% /run/lock
+tmpfs           961M  4.0K  961M   1% /tmp
+armbian-ramlog   50M  7.5M   43M  15% /var/log
+tmpfs           193M  4.0K  193M   1% /run/user/0
+/dev/mmcblk1p2 on / type ext4 (rw,relatime,data=writeback)
+/dev/mmcblk1p2 on /var/log.hdd type ext4 (rw,relatime,data=writeback)
+
+######## FILE BOOT (/boot) ########
+total 307752
+-rw-r--r-- 1 root root      800 Sep  1 13:41 aml_autoscript
+-rw-r--r-- 1 root root       64 Sep  8 12:55 boot.scr
+drwxr-xr-x 2 root root     4096 Sep  8 12:53 build-u-boot
+-rw-r--r-- 1 root root   282599 Sep  5 14:26 config-6.18.49-current-meson64
+-rw-r--r-- 1 root root   287508 Sep 14 03:37 config-7.2.5-edge-meson64
+lrwxrwxrwx 1 root root       22 Sep 15 13:57 dtb -> dtb-7.2.5-edge-meson64
+drwxr-xr-x 3 root root     4096 Sep  7 19:52 dtb-6.18.49-current-meson64
+drwxr-xr-x 3 root root     4096 Sep 15 13:57 dtb-7.2.5-edge-meson64
+-rw-r--r-- 1 root root      174 Sep  1 13:41 emmc_autoscript
+drwxr-xr-x 2 root root     4096 Sep 16 06:06 extlinux
+-rw-r--r-- 1 root root      277 Sep  8 12:53 extlinux.conf
+lrwxrwxrwx 1 root root       26 Sep 15 13:58 Image -> vmlinuz-7.2.5-edge-meson64
+lrwxrwxrwx 1 root root       29 Sep 15 13:58 initrd.img -> initrd.img-7.2.5-edge-meson64
+-rw-r--r-- 1 root root 28882614 Sep  8 11:29 initrd.img-6.12.35-current-meson64
+-rw-r--r-- 1 root root 28882614 Sep  8 11:29 initrd.img-6.18.49-current-meson64
+-rw-r--r-- 1 root root 29404121 Sep 15 13:58 initrd.img-7.2.5-edge-meson64
+lrwxrwxrwx 1 root root       34 Sep 15 13:58 initrd.img.old -> initrd.img-6.18.49-current-meson64
+-rw-r--r-- 1 root root      537 Sep  1 13:41 s905_autoscript
+-rw-r--r-- 1 root root  6139650 Sep  5 14:26 System.map-6.18.49-current-meson64
+-rw-r--r-- 1 root root  7207655 Sep 14 03:37 System.map-7.2.5-edge-meson64
+-rw-r--r-- 1 root root   609247 Sep  1 13:41 u-boot-s905
+-rw-r--r-- 1 root root   851352 Sep  1 13:41 u-boot-s905x2-s922
+-rw-r--r-- 1 root root   798672 Sep  1 13:41 u-boot-s905x3
+-rw-r--r-- 1 root root   854424 Sep  1 13:41 u-boot-s905x3-ugoosx3
+-rw-r--r-- 1 root root   646455 Sep  1 13:41 u-boot-s905x-s912
+lrwxrwxrwx 1 root root       26 Sep 15 13:58 uInitrd -> uInitrd-7.2.5-edge-meson64
+-rw-r--r-- 1 root root 28882678 Sep  8 11:29 uInitrd-6.18.49-current-meson64
+-rw-r--r-- 1 root root 29404185 Sep 15 13:58 uInitrd-7.2.5-edge-meson64
+lrwxrwxrwx 1 root root       26 Sep 15 13:58 vmlinuz -> vmlinuz-7.2.5-edge-meson64
+-rw-r--r-- 1 root root 37620224 Sep  5 14:26 vmlinuz-6.12.35-current-meson64
+-rw-r--r-- 1 root root 37620224 Sep  5 14:26 vmlinuz-6.18.49-current-meson64
+-rw-r--r-- 1 root root 39066112 Sep 14 03:37 vmlinuz-7.2.5-edge-meson64
+lrwxrwxrwx 1 root root       31 Sep 15 13:58 vmlinuz.old -> vmlinuz-6.18.49-current-meson64
+-rw-r--r-- 1 root root 37620224 Sep  8 12:53 zImage
+--- /boot/extlinux/extlinux.conf
+label Armbian
+    kernel /vmlinuz-7.2.5-edge-meson64
+    initrd /initrd.img-7.2.5-edge-meson64
+    fdt /dtb/amlogic/meson-gxl-s905x-p212.dtb
+    append root=LABEL=ROOTFS rootflags=data=writeback console=ttyAML0,115200n8 console=tty0 no_console_suspend consoleblank=0
+amlogic-s6-s905x5-bl209.dtb
+amlogic-s7d-s905x5m-bm202.dtb
+meson-gxl-s905x-bestv-r3300-l.dtb
+meson-gxl-s905x-hwacom-amazetv.dtb
+meson-gxl-s905x-khadas-vim.dtb
+meson-gxl-s905x-libretech-cc.dtb
+meson-gxl-s905x-libretech-cc-v2.dtb
+meson-gxl-s905x-nexbox-a95x.dtb
+meson-gxl-s905x-p212.dtb
+meson-gxl-s905x-vero4k.dtb
+
+######## PARTISI BOOT p1 (mmcblk1p1) ########
+mount: /mnt/p1: wrong fs type, bad option, bad superblock on /dev/mmcblk1p1, missing codepage or helper program, or other error.
+       dmesg(1) may have more information after failed mount system call.
+
+######## LAYANAN YANG JALAN ########
+  UNIT                         LOAD   ACTIVE SUB     DESCRIPTION
+  chrony.service               loaded active running chrony, an NTP client/server
+  cloudflared.service          loaded active running Cloudflare Tunnel
+  containerd.service           loaded active running containerd container runtime
+  cron.service                 loaded active running Regular background program processing daemon
+  dbus.service                 loaded active running D-Bus System Message Bus
+  dnsmasq.service              loaded active running dnsmasq - A lightweight DHCP and caching DNS server
+  getty@tty1.service           loaded active running Getty on tty1
+  NetworkManager.service       loaded active running Network Manager
+  nmbd.service                 loaded active running Samba NMB Daemon
+  packagekit.service           loaded active running PackageKit Daemon
+  photobooth.service           loaded active running SUKA MOTO Photobooth Flask Application
+  polkit.service               loaded active running Authorization Manager
+  rc-local.service             loaded active running /etc/rc.local Compatibility
+  rng-tools-debian.service     loaded active running LSB: rng-tools (Debian variant)
+  rpcbind.service              loaded active running RPC bind portmap service
+  rsyslog.service              loaded active running System Logging Service
+  serial-getty@ttyAML0.service loaded active running Serial Getty on ttyAML0
+  smbd.service                 loaded active running Samba SMB Daemon
+  ssh.service                  loaded active running OpenBSD Secure Shell server
+  stb-editor.service           loaded active running STB HTML Editor PHP Server
+  sukamoto-tunnel.service      loaded active running Cloudflare Tunnel for Sukamoto STB
+  sukamoto.service             loaded active running SUKA MOTO Web CMS & Engine
+  systemd-journald.service     loaded active running Journal Service
+  systemd-logind.service       loaded active running User Login Management
+  systemd-resolved.service     loaded active running Network Name Resolution
+  systemd-udevd.service        loaded active running Rule-based Manager for Device Events and Files
+  udisks2.service              loaded active running Disk Manager
+  unattended-upgrades.service  loaded active running Unattended Upgrades Shutdown
+  user@0.service               loaded active running User Manager for UID 0
+  vnstat.service               loaded active running vnStat network traffic monitor
+  web-terminal.service         loaded active running Custom Web Terminal (xterm.js + aiohttp)
+  wpa_supplicant.service       loaded active running WPA supplicant
+
+Legend: LOAD   → Reflects whether the unit definition was properly loaded.
+        ACTIVE → The high-level unit activation state, i.e. generalization of SUB.
+        SUB    → The low-level unit activation state, values depend on unit type.
+
+32 loaded units listed.
+State  Recv-Q Send-Q Local Address:Port  Peer Address:PortProcess                                                                               
+LISTEN 0      0            0.0.0.0:8899       0.0.0.0:*    users:(("php",pid=1968,fd=4))                                                        
+LISTEN 0      0            0.0.0.0:5000       0.0.0.0:*    users:(("python",pid=2098,fd=6),("python",pid=2098,fd=5),("python",pid=1966,fd=5))   
+LISTEN 0      0            0.0.0.0:8080       0.0.0.0:*    users:(("php",pid=2137,fd=4))                                                        
+LISTEN 0      0            0.0.0.0:8092       0.0.0.0:*    users:(("python",pid=1416,fd=6))                                                     
+LISTEN 0      0            0.0.0.0:8090       0.0.0.0:*    users:(("python3",pid=2099,fd=6),("python3",pid=2099,fd=5),("python3",pid=1970,fd=5))
+LISTEN 0      0            0.0.0.0:139        0.0.0.0:*    users:(("smbd",pid=2193,fd=32))                                                      
+LISTEN 0      0          127.0.0.1:20241      0.0.0.0:*    users:(("cloudflared",pid=2269,fd=9))                                                
+LISTEN 0      0          127.0.0.1:20242      0.0.0.0:*    users:(("cloudflared",pid=2264,fd=9))                                                
+LISTEN 0      0         127.0.0.53:53         0.0.0.0:*    users:(("systemd-resolve",pid=1341,fd=15))                                           
+LISTEN 0      0            0.0.0.0:22         0.0.0.0:*    users:(("sshd",pid=3171,fd=3),("systemd",pid=1,fd=160))                              
+LISTEN 0      0            0.0.0.0:111        0.0.0.0:*    users:(("rpcbind",pid=1339,fd=4),("systemd",pid=1,fd=176))                           
+LISTEN 0      0            0.0.0.0:445        0.0.0.0:*    users:(("smbd",pid=2193,fd=31))                                                      
+LISTEN 0      0         127.0.0.54:53         0.0.0.0:*    users:(("systemd-resolve",pid=1341,fd=17))                                           
+LISTEN 0      0                  *:139              *:*    users:(("smbd",pid=2193,fd=30))                                                      
+LISTEN 0      0                  *:22               *:*    users:(("sshd",pid=3171,fd=4),("systemd",pid=1,fd=161))                              
+LISTEN 0      0                  *:111              *:*    users:(("rpcbind",pid=1339,fd=6),("systemd",pid=1,fd=178))                           
+LISTEN 0      0                  *:445              *:*    users:(("smbd",pid=2193,fd=29))                                                      
+Cannot connect to the Docker daemon at unix:///var/run/docker.sock. Is the docker daemon running?
+
+######## SELESAI ########
+
